@@ -2,7 +2,7 @@ const User = require('../models/User');
 
 exports.getPendingUsers = async (req, res) => {
   try {
-    const pendingUsers = await User.find({ accountStatus: 'pending' }).select('-password');
+    const pendingUsers = await User.find({ status: 'pending' }).select('-password');
     res.status(200).json(pendingUsers);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -11,23 +11,23 @@ exports.getPendingUsers = async (req, res) => {
 
 exports.updateUserStatus = async (req, res) => {
   const { userId } = req.params;
-  const { status, rejectedReason } = req.body;
+  const { status, rejectionReason } = req.body;
 
   if (!['approved', 'rejected'].includes(status)) {
     return res.status(400).json({ message: 'Invalid status' });
   }
 
   // If rejecting and no reason provided, throw error
-  if (status === 'rejected' && !rejectedReason) {
+  if (status === 'rejected' && !rejectionReason) {
     return res.status(400).json({ message: 'Rejected reason is required' });
   }
 
   try {
     const updateFields = { status: status };
     if (status === 'rejected') {
-      updateFields.rejectedReason = rejectedReason;
+      updateFields.rejectionReason = rejectionReason;
     } else {
-      updateFields.$unset = { rejectedReason: '' }; // Clear if previously rejected
+      updateFields.$unset = { rejectionReason: '' }; // Clear if previously rejected
     }
 
     const user = await User.findByIdAndUpdate(
